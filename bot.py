@@ -1,22 +1,20 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes, ConversationHandler
+import asyncio
 import logging
-
-# ── Настройки ────────────────────────────────────────────
-TOKEN = "8987372920:AAFCQMkD3y3EvUY7YIx02Cc_Ck5Nh0ypwZ8"
-ADMIN_CHAT_ID = 0  # Заполни своё числовое ID ниже!
-# Узнать свой ID: напиши @userinfobot в Telegram
-
-# ── Шаги опроса ──────────────────────────────────────────
-STEP1, STEP2, STEP3, PHONE = range(4)
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
 logging.basicConfig(level=logging.INFO)
+
+TOKEN = "8987372920:AAFCQMkD3y3EvUY7YIx02Cc_Ck5Nh0ypwZ8"
+ADMIN_CHAT_ID = 7023725772  # Замени на свой ID из @userinfobot
+
+STEP1, STEP2, STEP3, PHONE = range(4)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     keyboard = [
         [InlineKeyboardButton("🏗 Новострой", callback_data="type_новострой")],
-        [InlineKeyboardButton("🏠 Вторичка",  callback_data="type_вторичка")],
+        [InlineKeyboardButton("🏠 Вторичка", callback_data="type_вторичка")],
     ]
     await update.message.reply_text(
         "👋 Добро пожаловать!\n\nПомогу подобрать недвижимость.\n\n📌 *Шаг 1 из 3* — Тип жилья:",
@@ -46,8 +44,8 @@ async def step2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     context.user_data["комнаты"] = query.data.replace("rooms_", "") + "-комнатная"
     keyboard = [
-        [InlineKeyboardButton("✨ Евроремонт",           callback_data="repair_евроремонт")],
-        [InlineKeyboardButton("🪣 Белый вариант",        callback_data="repair_белый вариант")],
+        [InlineKeyboardButton("✨ Евроремонт", callback_data="repair_евроремонт")],
+        [InlineKeyboardButton("🪣 Белый вариант", callback_data="repair_белый вариант")],
         [InlineKeyboardButton("🖌 Косметический ремонт", callback_data="repair_косметический ремонт")],
     ]
     await query.edit_message_text(
@@ -83,8 +81,6 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         phone = update.message.text
 
-    context.user_data["телефон"] = phone
-
     await update.message.reply_text(
         "✅ *Спасибо! Заявка принята.*\n\n"
         f"🏗 Тип: {context.user_data.get('тип')}\n"
@@ -105,9 +101,7 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔨 Ремонт: {context.user_data.get('ремонт')}"
     )
 
-    if ADMIN_CHAT_ID:
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_text, parse_mode="Markdown")
-
+    await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_text, parse_mode="Markdown")
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -115,7 +109,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 def main():
-    app = Application.builder().token(TOKEN).build()
+    app = ApplicationBuilder().token(TOKEN).build()
     conv = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
